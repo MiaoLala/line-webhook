@@ -33,10 +33,11 @@ def handle_message(event):
     user_id = event.source.user_id
     print(f"✅ 收到來自使用者的 userId：{user_id}")
 
+    reply_text = f"你的 userId 是：{user_id}"
+    
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text="✅ Hello! 已收到你的訊息，userId 已記錄！" )
-        TextSendMessage(text={user_id})
+        TextSendMessage(text=reply_text)
     )
 
 if __name__ == "__main__":
