@@ -3,9 +3,9 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 import os
-from meeting_notification import send_meeting_notification
+
 from user_registration import register_user  # 員編登記
-from meeting_notification import send_meeting_notification
+from meeting_notify import send_meeting_notification
 
 app = Flask(__name__)
 
