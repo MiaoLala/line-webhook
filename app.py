@@ -37,12 +37,17 @@ def handle_message(event):
 
     if user_message == "會議通知":
         send_meeting_notification(event, user_id, user_message, line_bot_api)
+    elif user_message == "我要綁定"
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請輸入格式：員編：XXXX，進行綁定")
+        )
     elif user_message.startswith("員編："):
         register_user(event, user_id, user_message, line_bot_api)
     else:
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="請輸入格式：員編：XXXX（例如：員編：7701）或輸入「會議通知」")
+            TextSendMessage(text="輸入錯誤，請重試")
         )
 
 if __name__ == "__main__":
