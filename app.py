@@ -14,8 +14,8 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
-USERID_DB_ID = os.getenv("USERID_DATABASE_ID")  # 儲存員編與 userId 的 database
-MEETING_DB_ID = os.getenv("MEETING_DATABASE_ID")  # 會議 database
+MEETING_DB_ID = "cd784a100f784e15b401155bc3313a1f" # 會議database
+USERID_DB_ID = "21bd8d0b09f180908e1df38429153325" # userid database
 notion = Client(auth=NOTION_TOKEN)
 
 def get_user_map():
