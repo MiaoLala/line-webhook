@@ -92,11 +92,11 @@ def get_today_meetings_for_user(staff_id, user_map):
             location = location_prop["select"]["name"]
 
         if datetime_str[:10] == today_str:
-        meetings_for_user.append({
-            "title": title,
-            "datetime": date_time,
-            "location": location
-        })
+            meetings_for_user.append({
+                "title": title,
+                "datetime": date_time,
+                "location": location
+            })
 
     if not meetings_for_user:
         return f"{today_display} 今天沒有會議喔！"
