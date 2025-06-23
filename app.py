@@ -66,45 +66,45 @@ def get_today_meetings_for_user(staff_id, user_map):
     ).get("results", [])
 
     meetings_for_user = []
-for page in meeting_pages:
-    props = page["properties"]
-    persons = props.get("相關人員", {}).get("people", [])
-    
-    # 確認是否為該員編
-    match_found = False
-    for p in persons:
-        if staff_id in p.get("name", ""):
-            match_found = True
-            break
-    if not match_found:
-        continue
-
-    # 會議標題
-    title = props["Name"]["title"][0]["text"]["content"] if props["Name"]["title"] else "未命名會議"
-    # 會議日期時間字串
-    datetime_str = props["日期"]["date"]["start"]
-    # 轉成datetime物件
-    dt_obj = datetime.fromisoformat(datetime_str)
-    meeting_date = dt_obj.date()
-    today_date = date.today()
-    print(f"會議日期: {meeting_date}, 今天日期: {today_date}")
-
-    # 只加入今天的會議
-    if meeting_date == today_date:
-        date_time = dt_obj.strftime("%Y/%m/%d %H:%M")
-        location = "未填寫"
-        location_prop = props.get("地點")
-        if location_prop and location_prop.get("select"):
-            location = location_prop["select"]["name"]
-
-        meetings_for_user.append({
-            "title": title,
-            "datetime": date_time,
-            "location": location
-        })
+    for page in meeting_pages:
+        props = page["properties"]
+        persons = props.get("相關人員", {}).get("people", [])
         
-if not meetings_for_user:
-    return f"{today_display} 今天沒有會議喔！"
+        # 確認是否為該員編
+        match_found = False
+        for p in persons:
+            if staff_id in p.get("name", ""):
+                match_found = True
+                break
+        if not match_found:
+            continue
+    
+        # 會議標題
+        title = props["Name"]["title"][0]["text"]["content"] if props["Name"]["title"] else "未命名會議"
+        # 會議日期時間字串
+        datetime_str = props["日期"]["date"]["start"]
+        # 轉成datetime物件
+        dt_obj = datetime.fromisoformat(datetime_str)
+        meeting_date = dt_obj.date()
+        today_date = date.today()
+        print(f"會議日期: {meeting_date}, 今天日期: {today_date}")
+    
+        # 只加入今天的會議
+        if meeting_date == today_date:
+            date_time = dt_obj.strftime("%Y/%m/%d %H:%M")
+            location = "未填寫"
+            location_prop = props.get("地點")
+            if location_prop and location_prop.get("select"):
+                location = location_prop["select"]["name"]
+    
+            meetings_for_user.append({
+                "title": title,
+                "datetime": date_time,
+                "location": location
+            })
+            
+    if not meetings_for_user:
+        return f"{today_display} 今天沒有會議喔！"
 
     lines = [f"{today_display} 會議提醒"]
     for idx, m in enumerate(meetings_for_user, start=1):
