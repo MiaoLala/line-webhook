@@ -91,6 +91,7 @@ def get_today_meetings_for_user(staff_id, user_map):
         if location_prop and location_prop.get("select"):
             location = location_prop["select"]["name"]
 
+        if datetime_str[:10] == today_str:
         meetings_for_user.append({
             "title": title,
             "datetime": date_time,
