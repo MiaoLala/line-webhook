@@ -1,7 +1,12 @@
+# meeting_notify.py
 from notion_client import Client
 from datetime import datetime, date
+import pytz
 import os
 from linebot.models import TextSendMessage
+
+# 設定台灣時區
+tz = pytz.timezone("Asia/Taipei")
 
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 MEETING_DB_ID = "cd784a100f784e15b401155bc3313a1f"
@@ -9,6 +14,7 @@ USERID_DB_ID = "21bd8d0b09f180908e1df38429153325"
 notion = Client(auth=NOTION_TOKEN)
 
 def get_user_map():
+    """取得 userid database 中 員編 -> userId 的對照字典"""
     user_map = {}
     user_pages = notion.databases.query(
         database_id=USERID_DB_ID,
@@ -27,8 +33,10 @@ def get_user_map():
     return user_map
 
 def get_today_meetings_for_user(staff_id):
-    today_str = datetime.now().date().isoformat()
-    today_display = datetime.now().strftime("%Y/%m/%d")
+    """取得該員編今天所有相關會議列表"""
+    now = datetime.now(tz)
+    today_str = now.date().isoformat()
+    today_display = now.strftime("%Y/%m/%d")
 
     filter_conditions = {
         "and": [
@@ -57,18 +65,17 @@ def get_today_meetings_for_user(staff_id):
     for page in meeting_pages:
         props = page["properties"]
         persons = props.get("相關人員", {}).get("people", [])
-        
+
         match_found = any(staff_id in p.get("name", "") for p in persons)
         if not match_found:
             continue
 
         title = props["Name"]["title"][0]["text"]["content"] if props["Name"]["title"] else "未命名會議"
         datetime_str = props["日期"]["date"]["start"]
-        dt_obj = datetime.fromisoformat(datetime_str)
+        dt_obj = datetime.fromisoformat(datetime_str).astimezone(tz)
         meeting_date = dt_obj.date()
-        today_date = date.today()
 
-        if meeting_date == today_date:
+        if meeting_date == now.date():
             date_time = dt_obj.strftime("%Y/%m/%d %H:%M")
             location = "未填寫"
             location_prop = props.get("地點")
@@ -92,7 +99,7 @@ def get_today_meetings_for_user(staff_id):
         lines.append("")
     return "\n".join(lines).strip()
 
-def send_meeting_notification(event, user_id, user_message, line_bot_api):
+def send_meeting_notification(event, user_id, line_bot_api):
     try:
         user_map = get_user_map()
         staff_id = None
