@@ -1,3 +1,4 @@
 flask
 line-bot-sdk==2.1.0
 notion_client
+pytz
