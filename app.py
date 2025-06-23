@@ -8,16 +8,105 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# LINE Bot 設定
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-# Notion 設定
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
-NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
+USERID_DB_ID = os.getenv("USERID_DATABASE_ID")  # 儲存員編與 userId 的 database
+MEETING_DB_ID = os.getenv("MEETING_DATABASE_ID")  # 會議 database
 notion = Client(auth=NOTION_TOKEN)
+
+def get_user_map():
+    """取得 userid database 中 員編 -> userId 的對照字典"""
+    user_map = {}
+    user_pages = notion.databases.query(
+        database_id=USERID_DB_ID,
+        filter={
+            "property": "Name",
+            "title": {"is_not_empty": True}
+        }
+    ).get("results", [])
+
+    for page in user_pages:
+        name = page["properties"]["Name"]["title"][0]["text"]["content"]
+        user_id_prop = page["properties"].get("User ID", {}).get("rich_text", [])
+        user_id = user_id_prop[0]["text"]["content"] if user_id_prop else None
+        if name and user_id:
+            user_map[name] = user_id
+    return user_map
+
+def get_today_meetings_for_user(staff_id, user_map):
+    """取得該員編今天所有相關會議列表(依會議 database 比對相關人員欄位)"""
+    today_str = datetime.now().date().isoformat()
+    today_display = datetime.now().strftime("%Y/%m/%d")
+
+    filter_conditions = {
+        "and": [
+            {
+                "property": "日期",
+                "date": {
+                    "on_or_after": today_str,
+                    "on_or_before": today_str
+                }
+            },
+            {
+                "property": "類別",
+                "select": {
+                    "equals": "會議"
+                }
+            }
+        ]
+    }
+
+    meeting_pages = notion.databases.query(
+        database_id=MEETING_DB_ID,
+        filter=filter_conditions
+    ).get("results", [])
+
+    meetings_for_user = []
+    for page in meeting_pages:
+        props = page["properties"]
+        # 相關人員 person 欄位，通常是 list of dict
+        persons = props.get("相關人員", {}).get("people", [])
+        # persons 中會有 name，形如 "資訊_7701繆依廷"
+        # 判斷該 staff_id 是否包含在 name 裡 (用in判斷)
+        match_found = False
+        for p in persons:
+            if staff_id in p.get("name", ""):
+                match_found = True
+                break
+        if not match_found:
+            continue  # 該會議無關此員編，跳過
+
+        # 會議標題
+        title = props["Name"]["title"][0]["text"]["content"] if props["Name"]["title"] else "未命名會議"
+        # 會議日期時間
+        datetime_str = props["日期"]["date"]["start"]
+        date_time = datetime.fromisoformat(datetime_str).strftime("%Y/%m/%d %H:%M")
+        # 會議地點
+        location = "未填寫"
+        location_prop = props.get("地點")
+        if location_prop and location_prop.get("select"):
+            location = location_prop["select"]["name"]
+
+        meetings_for_user.append({
+            "title": title,
+            "datetime": date_time,
+            "location": location
+        })
+
+    if not meetings_for_user:
+        return f"{today_display} 今天沒有會議喔！"
+
+    lines = [f"{today_display} 會議提醒"]
+    for idx, m in enumerate(meetings_for_user, start=1):
+        lines.append(f"{idx}. {m['title']}")
+        lines.append(f"－ 時間：{m['datetime']}")
+        lines.append(f"－ 地點：{m['location']}")
+        lines.append("")
+    return "\n".join(lines).strip()
 
 @app.route("/", methods=["GET"])
 def home():
@@ -32,7 +121,6 @@ def callback():
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
-
     return "OK"
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -41,6 +129,35 @@ def handle_message(event):
     user_message = event.message.text.strip()
     print(f"✅ 收到來自 {user_id} 的訊息：{user_message}")
 
+    # 如果收到「會議通知」則送出該 user 當天會議
+    if user_message == "會議通知":
+        try:
+            user_map = get_user_map()
+            # 找出此 user_id 對應的員編 (key)
+            staff_id = None
+            for k, v in user_map.items():
+                if v == user_id:
+                    staff_id = k
+                    break
+            if not staff_id:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="❌ 找不到你的員編資料，請先登記員編")
+                )
+                return
+
+            reply_text = get_today_meetings_for_user(staff_id, user_map)
+        except Exception as e:
+            print(f"❌ 查詢會議或使用者資料發生錯誤：{e}")
+            reply_text = "❌ 取得會議資訊失敗，請稍後再試"
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+        return
+
+    # 你的員編登記原有邏輯
     if user_message.startswith("員編："):
         staff_id = user_message.replace("員編：", "").strip()
 
