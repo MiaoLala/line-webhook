@@ -5,7 +5,6 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage
 import os
 
 from user_registration import register_user  # 員編登記
-from meeting_notify import send_meeting_notification  # 會議通知
 from meeting_notification import send_meeting_notification
 
 app = Flask(__name__)
