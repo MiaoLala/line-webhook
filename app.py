@@ -37,7 +37,7 @@ def handle_message(event):
 
     if user_message == "會議通知":
         send_meeting_notification(event, user_id, user_message, line_bot_api)
-    elif user_message == "我要綁定"
+    elif user_message == "我要綁定":
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="請輸入格式：員編：XXXX，進行綁定")
