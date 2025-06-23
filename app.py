@@ -170,7 +170,7 @@ def handle_message(event):
         # 1️⃣ 查詢是否已有相同 User ID
         try:
             user_check = notion.databases.query(
-                database_id=USERID_DB_ID,
+                database_id=NOTION_DATABASE_ID,
                 filter={
                     "property": "User ID",
                     "rich_text": {
@@ -196,7 +196,7 @@ def handle_message(event):
         # 2️⃣ 查詢是否已有相同員編
         try:
             staff_check = notion.databases.query(
-                database_id=USERID_DB_ID,
+                database_id=NOTION_DATABASE_ID,
                 filter={
                     "property": "Name",
                     "title": {
@@ -222,7 +222,7 @@ def handle_message(event):
         # 3️⃣ 寫入 Notion
         try:
             notion.pages.create(
-                parent={"database_id": USERID_DB_ID},
+                parent={"database_id": NOTION_DATABASE_ID},
                 properties={
                     "Name": {
                         "title": [
@@ -246,18 +246,22 @@ def handle_message(event):
                 TextSendMessage(text=f"✅ 已成功登記員編：{staff_id}")
             )
             print(f"✅ 已寫入 Notion，userId: {user_id}, 員編: {staff_id}")
-            return
         except Exception as e:
             print(f"❌ 寫入 Notion 發生錯誤：{e}")
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="❌ 寫入 Notion 發生錯誤，請稍後再試")
             )
+    else:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請輸入格式：員編：XXXX（例如：員編：7701）")
+        )
 
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text="請輸入格式：員編：XXXX（例如：員編：7701）")
-    )
+line_bot_api.reply_message(
+    event.reply_token,
+    TextSendMessage(text="請輸入格式：員編：XXXX（例如：員編：7701）")
+)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
