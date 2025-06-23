@@ -170,7 +170,7 @@ def handle_message(event):
         # 1️⃣ 查詢是否已有相同 User ID
         try:
             user_check = notion.databases.query(
-                database_id=NOTION_DATABASE_ID,
+                database_id=USERID_DB_ID,
                 filter={
                     "property": "User ID",
                     "rich_text": {
@@ -196,7 +196,7 @@ def handle_message(event):
         # 2️⃣ 查詢是否已有相同員編
         try:
             staff_check = notion.databases.query(
-                database_id=NOTION_DATABASE_ID,
+                database_id=USERID_DB_ID,
                 filter={
                     "property": "Name",
                     "title": {
@@ -222,7 +222,7 @@ def handle_message(event):
         # 3️⃣ 寫入 Notion
         try:
             notion.pages.create(
-                parent={"database_id": NOTION_DATABASE_ID},
+                parent={"database_id": USERID_DB_ID},
                 properties={
                     "Name": {
                         "title": [
