@@ -103,8 +103,8 @@ for page in meeting_pages:
             "location": location
         })
         
-    if not meetings_for_user:
-        return f"{today_display} 今天沒有會議喔！"
+if not meetings_for_user:
+    return f"{today_display} 今天沒有會議喔！"
 
     lines = [f"{today_display} 會議提醒"]
     for idx, m in enumerate(meetings_for_user, start=1):
