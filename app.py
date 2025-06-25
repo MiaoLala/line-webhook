@@ -6,6 +6,7 @@ import os
 
 from user_registration import register_user  # 員編登記
 from meeting_notify import send_meeting_notification
+from message_counter import should_send, increment_message_count
 
 app = Flask(__name__)
 
@@ -35,6 +36,14 @@ def handle_message(event):
     user_id = event.source.user_id
     user_message = event.message.text.strip()
 
+    # ✅ 先檢查是否還有訊息額度
+    if not should_send():
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="已達每月免費通知上限（180 則），請下月再試。")
+        )
+        return  # ❌ 停止後續執行
+        
     if user_message == "會議通知":
         send_meeting_notification(event, user_id, user_message, line_bot_api)
     elif user_message == "我要綁定":
@@ -49,6 +58,7 @@ def handle_message(event):
             event.reply_token,
             TextSendMessage(text="輸入錯誤，請重試")
         )
+    increment_message_count()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
