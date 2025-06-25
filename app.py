@@ -38,10 +38,6 @@ def handle_message(event):
 
     # ✅ 先檢查是否還有訊息額度
     if not should_send():
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="已達每月免費通知上限（180 則），請下月再試。")
-        )
         return  # ❌ 停止後續執行
         
     if user_message == "會議通知":
